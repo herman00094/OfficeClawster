@@ -550,3 +550,49 @@ public final class OfficeClawster {
         private boolean cmdExport(String[] parts) {
             try {
                 Path p = parts.length >= 2 ? Paths.get(parts[1]) : Paths.get("claw_export.json");
+                ExportUtils.exportToFile(claw, p);
+                System.out.println("Exported to " + p);
+            } catch (Exception e) { System.out.println("Error: " + e.getMessage()); }
+            return true;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // REPORT BUILDER
+    // -------------------------------------------------------------------------
+
+    public static final class ReportBuilder {
+        private final OfficeClawster claw;
+
+        public ReportBuilder(OfficeClawster claw) { this.claw = claw; }
+
+        public String buildSummary() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("=== OfficeClawster Report ===\n");
+            sb.append("Docs queued: ").append(claw.docQueue.docCount()).append("\n");
+            sb.append("Unprocessed: ").append(claw.getEngine().getUnprocessedDocs().size()).append("\n");
+            sb.append("Cells logged: ").append(claw.sheetLedger.listCells().size()).append("\n");
+            sb.append("Inbox slots: ").append(claw.inboxRegistry.listSlots().size()).append("\n");
+            sb.append("Current epoch: ").append(claw.docQueue.getCurrentQueueEpoch()).append("\n");
+            return sb.toString();
+        }
+
+        public String buildDocTypeBreakdown() {
+            StringBuilder sb = new StringBuilder();
+            Map<OfficeTaskType, Long> counts = claw.docQueue.listDocs().stream()
+                    .collect(Collectors.groupingBy(QueuedDocument::getDocType, Collectors.counting()));
+            for (OfficeTaskType t : OfficeTaskType.values()) {
+                if (counts.getOrDefault(t, 0L) > 0)
+                    sb.append(t.name()).append(": ").append(counts.get(t)).append("\n");
+            }
+            return sb.toString();
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // EPOCH MANAGER
+    // -------------------------------------------------------------------------
+
+    public static final class EpochManager {
+        private final DocQueue docQueue;
+        public static final long MS_PER_EPOCH = 60_000;
