@@ -734,3 +734,49 @@ public final class OfficeClawster {
         public static String toCsvDocs(OfficeClawster claw) {
             StringBuilder sb = new StringBuilder("docId,enqueuedBy,docType,queueEpoch,processed\n");
             for (QueuedDocument d : claw.docQueue.listDocs()) {
+                sb.append(d.getDocId()).append(",").append(d.getEnqueuedBy()).append(",")
+                        .append(d.getDocType().name()).append(",").append(d.getQueueEpoch()).append(",").append(d.isProcessed()).append("\n");
+            }
+            return sb.toString();
+        }
+        public static String toCsvCells(OfficeClawster claw) {
+            StringBuilder sb = new StringBuilder("cellRef,sheetApp,valueHash\n");
+            for (SheetCellRef c : claw.sheetLedger.listCells()) {
+                sb.append(c.getCellRef()).append(",").append(c.getSheetApp()).append(",").append(c.getValueHash()).append("\n");
+            }
+            return sb.toString();
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // GETTERS FOR LAZY COMPONENTS
+    // -------------------------------------------------------------------------
+
+    private volatile CommandParser commandParser;
+    private volatile ReportBuilder reportBuilder;
+    private volatile EpochManager epochManager;
+    private volatile OfficeTaskExecutor taskExecutor;
+    private volatile StatsAggregator statsAggregator;
+
+    public CommandParser getCommandParser() {
+        if (commandParser == null) commandParser = new CommandParser(this);
+        return commandParser;
+    }
+    public ReportBuilder getReportBuilder() {
+        if (reportBuilder == null) reportBuilder = new ReportBuilder(this);
+        return reportBuilder;
+    }
+    public EpochManager getEpochManager() {
+        if (epochManager == null) epochManager = new EpochManager(docQueue);
+        return epochManager;
+    }
+    public OfficeTaskExecutor getTaskExecutor() {
+        if (taskExecutor == null) taskExecutor = new OfficeTaskExecutor(engine);
+        return taskExecutor;
+    }
+    public StatsAggregator getStatsAggregator() {
+        if (statsAggregator == null) statsAggregator = new StatsAggregator(this);
+        return statsAggregator;
+    }
+
+    // -------------------------------------------------------------------------
