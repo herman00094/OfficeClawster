@@ -320,3 +320,49 @@ public final class OfficeClawster {
             StringBuilder sb = new StringBuilder();
             sb.append("{\"version\":\"").append(CLAW_VERSION).append("\",\"epoch\":").append(claw.docQueue.getCurrentQueueEpoch()).append(",");
             sb.append("\"docs\":[");
+            List<String> docIds = claw.docQueue.listDocIds();
+            for (int i = 0; i < docIds.size(); i++) {
+                QueuedDocument d = claw.docQueue.getDoc(docIds.get(i)).orElse(null);
+                if (d == null) continue;
+                if (i > 0) sb.append(",");
+                sb.append("{\"id\":\"").append(escape(d.getDocId())).append("\",\"type\":\"").append(d.getDocType().name()).append("\",\"processed\":").append(d.isProcessed()).append("}");
+            }
+            sb.append("],\"cells\":").append(claw.sheetLedger.listCells().size()).append(",\"inboxSlots\":").append(claw.inboxRegistry.listSlots().size()).append("}");
+            return sb.toString();
+        }
+
+        private static String escape(String s) {
+            if (s == null) return "";
+            return s.replace("\\", "\\\\").replace("\"", "\\\"");
+        }
+
+        public static String hashContent(String content) {
+            if (content == null) return "";
+            try {
+                MessageDigest md = MessageDigest.getInstance("SHA-256");
+                byte[] digest = md.digest(content.getBytes(StandardCharsets.UTF_8));
+                StringBuilder hex = new StringBuilder();
+                for (byte b : digest) hex.append(String.format("%02x", b));
+                return hex.toString();
+            } catch (NoSuchAlgorithmException e) {
+                return Integer.toHexString(content.hashCode());
+            }
+        }
+
+        public static void exportToFile(OfficeClawster claw, Path path) throws IOException {
+            Files.write(path, toJson(claw).getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // VALIDATION
+    // -------------------------------------------------------------------------
+
+    public static final class ValidationUtils {
+        public static boolean isValidDocId(String docId) {
+            return docId != null && !docId.isEmpty() && docId.length() <= 128;
+        }
+
+        public static boolean isValidCellRef(String cellRef) {
+            return cellRef != null && cellRef.matches("[A-Za-z]+[0-9]+");
+        }
