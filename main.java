@@ -688,3 +688,49 @@ public final class OfficeClawster {
         private final int cellSlots;
         private final int inboxSlots;
         private final String domainHex;
+
+        public ClawConfig(int queueCap, int cellSlots, int inboxSlots, String domainHex) {
+            this.queueCap = queueCap;
+            this.cellSlots = cellSlots;
+            this.inboxSlots = inboxSlots;
+            this.domainHex = domainHex != null ? domainHex : "0x1e4f7a9C2d5E8b0F3a6C9e1D4b7F0a3C6d9E2b5F8a1c4e7";
+        }
+
+        public int getQueueCap() { return queueCap; }
+        public int getCellSlots() { return cellSlots; }
+        public int getInboxSlots() { return inboxSlots; }
+        public String getDomainHex() { return domainHex; }
+    }
+
+    // -------------------------------------------------------------------------
+    // STATS AGGREGATOR
+    // -------------------------------------------------------------------------
+
+    public static final class StatsAggregator {
+        private final OfficeClawster claw;
+
+        public StatsAggregator(OfficeClawster claw) { this.claw = claw; }
+
+        public int totalDocs() { return claw.docQueue.docCount(); }
+        public int processedDocs() {
+            return (int) claw.docQueue.listDocs().stream().filter(QueuedDocument::isProcessed).count();
+        }
+        public int pendingDocs() { return totalDocs() - processedDocs(); }
+        public int totalCells() { return claw.sheetLedger.listCells().size(); }
+        public int totalInboxSlots() { return claw.inboxRegistry.listSlots().size(); }
+        public Map<OfficeTaskType, Integer> docsByType() {
+            Map<OfficeTaskType, Integer> m = new EnumMap<>(OfficeTaskType.class);
+            for (OfficeTaskType t : OfficeTaskType.values()) m.put(t, 0);
+            claw.docQueue.listDocs().forEach(d -> m.put(d.getDocType(), m.get(d.getDocType()) + 1));
+            return m;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // ADDITIONAL EXPORT FORMATS
+    // -------------------------------------------------------------------------
+
+    public static final class ExportFormats {
+        public static String toCsvDocs(OfficeClawster claw) {
+            StringBuilder sb = new StringBuilder("docId,enqueuedBy,docType,queueEpoch,processed\n");
+            for (QueuedDocument d : claw.docQueue.listDocs()) {
