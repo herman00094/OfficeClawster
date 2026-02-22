@@ -366,3 +366,49 @@ public final class OfficeClawster {
         public static boolean isValidCellRef(String cellRef) {
             return cellRef != null && cellRef.matches("[A-Za-z]+[0-9]+");
         }
+
+        public static boolean isValidSlotId(String slotId) {
+            return slotId != null && !slotId.isEmpty() && slotId.length() <= 64;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // BATCH OPERATIONS
+    // -------------------------------------------------------------------------
+
+    public static final class BatchOps {
+        public static int enqueueBatch(OfficeClawster claw, List<String> docIds, String enqueuedBy, OfficeTaskType type, String payloadHash) {
+            int n = 0;
+            for (String id : docIds) {
+                if (!ValidationUtils.isValidDocId(id)) continue;
+                try {
+                    claw.docQueue.enqueue(id, enqueuedBy, type, payloadHash != null ? payloadHash : ExportUtils.hashContent(id));
+                    n++;
+                } catch (Exception ignored) { }
+            }
+            return n;
+        }
+
+        public static int logCellsBatch(OfficeClawster claw, List<String> cellRefs, int sheetApp) {
+            int n = 0;
+            for (String ref : cellRefs) {
+                if (!ValidationUtils.isValidCellRef(ref)) continue;
+                try {
+                    claw.sheetLedger.logCell(ref, sheetApp, ExportUtils.hashContent(ref));
+                    n++;
+                } catch (Exception ignored) { }
+            }
+            return n;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // ID GENERATOR
+    // -------------------------------------------------------------------------
+
+    public static final class IdGenerator {
+        private static final String PREFIX_DOC = "doc-";
+        private static final String PREFIX_CELL = "cell-";
+        private static final String PREFIX_SLOT = "slot-";
+        private int seq;
+
