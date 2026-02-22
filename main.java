@@ -228,3 +228,49 @@ public final class OfficeClawster {
             allCells.add(ref);
         }
 
+        public Optional<SheetCellRef> getBySlot(int slot) {
+            return Optional.ofNullable(cellsBySlot.get(slot));
+        }
+
+        public List<SheetCellRef> listCells() { return new ArrayList<>(allCells); }
+        public List<SheetCellRef> listBySheetApp(int sheetApp) {
+            return allCells.stream().filter(c -> c.getSheetApp() == sheetApp).collect(Collectors.toList());
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // INBOX REGISTRY
+    // -------------------------------------------------------------------------
+
+    public static final class InboxRegistry {
+        private final int slots;
+        private final Map<String, InboxSlotItem> bySlotId;
+        private final Map<Integer, InboxSlotItem> bySlotIndex;
+        private final List<InboxSlotItem> allSlots;
+
+        public InboxRegistry(int slots) {
+            this.slots = Math.max(1, slots);
+            this.bySlotId = new ConcurrentHashMap<>();
+            this.bySlotIndex = new ConcurrentHashMap<>();
+            this.allSlots = new ArrayList<>();
+        }
+
+        public InboxSlotItem reserve(String slotId, String reservedBy, int inboxType) {
+            if (bySlotId.containsKey(slotId)) throw new IllegalStateException("Slot id already reserved");
+            if (bySlotIndex.size() >= slots) throw new IllegalStateException("Inbox slot cap");
+            int idx = Math.abs(slotId.hashCode()) % slots;
+            while (bySlotIndex.containsKey(idx)) idx = (idx + 1) % slots;
+            InboxSlotItem item = new InboxSlotItem(slotId, reservedBy, inboxType);
+            bySlotId.put(slotId, item);
+            bySlotIndex.put(idx, item);
+            allSlots.add(item);
+            return item;
+        }
+
+        public Optional<InboxSlotItem> getBySlotId(String slotId) {
+            return Optional.ofNullable(bySlotId.get(slotId));
+        }
+
+        public List<InboxSlotItem> listSlots() { return new ArrayList<>(allSlots); }
+    }
+
