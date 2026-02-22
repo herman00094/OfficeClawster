@@ -44,3 +44,49 @@ public final class OfficeClawster {
     }
 
     public OfficeClawster.DocQueue getDocQueue() { return docQueue; }
+    public OfficeClawster.SheetLedger getSheetLedger() { return sheetLedger; }
+    public OfficeClawster.InboxRegistry getInboxRegistry() { return inboxRegistry; }
+    public OfficeClawster.ClawBotEngine getEngine() { return engine; }
+
+    // -------------------------------------------------------------------------
+    // OFFICE TASK TYPE
+    // -------------------------------------------------------------------------
+
+    public enum OfficeTaskType {
+        WORD_DOC(0),
+        EXCEL_SHEET(1),
+        OUTLOOK_MAIL(2),
+        POWERPOINT_SLIDE(3),
+        ONENOTE_PAGE(4),
+        ACCESS_DB(5),
+        PUBLISHER_PUB(6),
+        VISIO_DIAGRAM(7),
+        PROJECT_PLAN(8),
+        TEAMS_MSG(9),
+        SHAREPOINT_ITEM(10),
+        GENERIC_DOC(11),
+        CALENDAR_EVENT(12),
+        CONTACT_ENTRY(13),
+        TASK_ITEM(14),
+        UNKNOWN(15);
+
+        private final int code;
+        OfficeTaskType(int code) { this.code = code; }
+        public int getCode() { return code; }
+        public static OfficeTaskType fromCode(int c) {
+            for (OfficeTaskType t : values()) if (t.code == c) return t;
+            return UNKNOWN;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // QUEUED DOCUMENT
+    // -------------------------------------------------------------------------
+
+    public static final class QueuedDocument {
+        private final String docId;
+        private final String enqueuedBy;
+        private final OfficeTaskType docType;
+        private final long queueEpoch;
+        private final long enqueuedAtMs;
+        private final String payloadHash;
