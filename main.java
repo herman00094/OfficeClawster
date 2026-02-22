@@ -90,3 +90,49 @@ public final class OfficeClawster {
         private final long queueEpoch;
         private final long enqueuedAtMs;
         private final String payloadHash;
+        private boolean processed;
+
+        public QueuedDocument(String docId, String enqueuedBy, OfficeTaskType docType, long queueEpoch, String payloadHash) {
+            this.docId = Objects.requireNonNull(docId);
+            this.enqueuedBy = enqueuedBy != null ? enqueuedBy : "";
+            this.docType = docType != null ? docType : OfficeTaskType.GENERIC_DOC;
+            this.queueEpoch = queueEpoch;
+            this.enqueuedAtMs = System.currentTimeMillis();
+            this.payloadHash = payloadHash != null ? payloadHash : "";
+            this.processed = false;
+        }
+
+        public String getDocId() { return docId; }
+        public String getEnqueuedBy() { return enqueuedBy; }
+        public OfficeTaskType getDocType() { return docType; }
+        public long getQueueEpoch() { return queueEpoch; }
+        public long getEnqueuedAtMs() { return enqueuedAtMs; }
+        public String getPayloadHash() { return payloadHash; }
+        public boolean isProcessed() { return processed; }
+        public void setProcessed(boolean processed) { this.processed = processed; }
+    }
+
+    // -------------------------------------------------------------------------
+    // SHEET CELL REF
+    // -------------------------------------------------------------------------
+
+    public static final class SheetCellRef {
+        private final String cellRef;
+        private final int sheetApp;
+        private final long loggedAtMs;
+        private final String valueHash;
+
+        public SheetCellRef(String cellRef, int sheetApp, String valueHash) {
+            this.cellRef = Objects.requireNonNull(cellRef);
+            this.sheetApp = Math.max(0, Math.min(CELL_SLOTS - 1, sheetApp));
+            this.loggedAtMs = System.currentTimeMillis();
+            this.valueHash = valueHash != null ? valueHash : "";
+        }
+
+        public String getCellRef() { return cellRef; }
+        public int getSheetApp() { return sheetApp; }
+        public long getLoggedAtMs() { return loggedAtMs; }
+        public String getValueHash() { return valueHash; }
+    }
+
+    // -------------------------------------------------------------------------
