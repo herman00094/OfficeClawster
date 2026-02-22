@@ -596,3 +596,49 @@ public final class OfficeClawster {
     public static final class EpochManager {
         private final DocQueue docQueue;
         public static final long MS_PER_EPOCH = 60_000;
+
+        public EpochManager(DocQueue docQueue) { this.docQueue = docQueue; }
+
+        public long getCurrentEpoch() { return docQueue.getCurrentQueueEpoch(); }
+        public void advanceEpoch() { docQueue.bumpEpoch(); }
+        public int docsInEpoch(long epoch) {
+            return (int) docQueue.listDocs().stream().filter(d -> d.getQueueEpoch() == epoch).count();
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // OFFICE TASK EXECUTOR (STUB)
+    // -------------------------------------------------------------------------
+
+    public static final class OfficeTaskExecutor {
+        private final ClawBotEngine engine;
+        private int executedCount;
+
+        public OfficeTaskExecutor(ClawBotEngine engine) {
+            this.engine = engine;
+            this.executedCount = 0;
+        }
+
+        public int getExecutedCount() { return executedCount; }
+        public void executeNext() {
+            List<QueuedDocument> unprocessed = engine.getUnprocessedDocs();
+            if (!unprocessed.isEmpty()) {
+                engine.docQueue.markProcessed(unprocessed.get(0).getDocId());
+                executedCount++;
+            }
+        }
+        public void executeAll() {
+            while (!engine.getUnprocessedDocs().isEmpty()) executeNext();
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // FILTERS
+    // -------------------------------------------------------------------------
+
+    public static final class DocFilters {
+        public static List<QueuedDocument> byType(Collection<QueuedDocument> docs, OfficeTaskType type) {
+            return docs.stream().filter(d -> d.getDocType() == type).collect(Collectors.toList());
+        }
+        public static List<QueuedDocument> unprocessedOnly(Collection<QueuedDocument> docs) {
+            return docs.stream().filter(d -> !d.isProcessed()).collect(Collectors.toList());
