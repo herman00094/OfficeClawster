@@ -136,3 +136,49 @@ public final class OfficeClawster {
     }
 
     // -------------------------------------------------------------------------
+    // INBOX SLOT ITEM
+    // -------------------------------------------------------------------------
+
+    public static final class InboxSlotItem {
+        private final String slotId;
+        private final String reservedBy;
+        private final int inboxType;
+        private final long reservedAtMs;
+
+        public InboxSlotItem(String slotId, String reservedBy, int inboxType) {
+            this.slotId = Objects.requireNonNull(slotId);
+            this.reservedBy = reservedBy != null ? reservedBy : "";
+            this.inboxType = Math.max(0, Math.min(INBOX_SLOTS - 1, inboxType));
+            this.reservedAtMs = System.currentTimeMillis();
+        }
+
+        public String getSlotId() { return slotId; }
+        public String getReservedBy() { return reservedBy; }
+        public int getInboxType() { return inboxType; }
+        public long getReservedAtMs() { return reservedAtMs; }
+    }
+
+    // -------------------------------------------------------------------------
+    // DOC QUEUE
+    // -------------------------------------------------------------------------
+
+    public static final class DocQueue {
+        private final int capacity;
+        private final Map<String, QueuedDocument> docs;
+        private final List<String> docIdOrder;
+        private long currentQueueEpoch;
+
+        public DocQueue(int capacity) {
+            this.capacity = Math.max(1, capacity);
+            this.docs = new ConcurrentHashMap<>();
+            this.docIdOrder = new ArrayList<>();
+            this.currentQueueEpoch = 0;
+        }
+
+        public int getCapacity() { return capacity; }
+        public int docCount() { return docs.size(); }
+        public long getCurrentQueueEpoch() { return currentQueueEpoch; }
+        public void bumpEpoch() { currentQueueEpoch++; }
+
+        public Optional<QueuedDocument> getDoc(String docId) {
+            return Optional.ofNullable(docs.get(docId));
