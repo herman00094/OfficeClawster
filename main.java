@@ -182,3 +182,49 @@ public final class OfficeClawster {
 
         public Optional<QueuedDocument> getDoc(String docId) {
             return Optional.ofNullable(docs.get(docId));
+        }
+
+        public QueuedDocument enqueue(String docId, String enqueuedBy, OfficeTaskType docType, String payloadHash) {
+            if (docs.size() >= capacity) throw new IllegalStateException("Queue full");
+            if (docId == null || docId.isEmpty()) throw new IllegalArgumentException("Zero doc id");
+            if (docs.containsKey(docId)) throw new IllegalStateException("Duplicate doc id");
+            QueuedDocument d = new QueuedDocument(docId, enqueuedBy, docType, currentQueueEpoch, payloadHash);
+            docs.put(docId, d);
+            docIdOrder.add(docId);
+            return d;
+        }
+
+        public void markProcessed(String docId) {
+            QueuedDocument d = docs.get(docId);
+            if (d == null) throw new IllegalArgumentException("Doc not found");
+            if (d.isProcessed()) throw new IllegalStateException("Already processed");
+            d.setProcessed(true);
+        }
+
+        public List<String> listDocIds() { return new ArrayList<>(docIdOrder); }
+        public Collection<QueuedDocument> listDocs() { return new ArrayList<>(docs.values()); }
+    }
+
+    // -------------------------------------------------------------------------
+    // SHEET LEDGER
+    // -------------------------------------------------------------------------
+
+    public static final class SheetLedger {
+        private final int slots;
+        private final Map<Integer, SheetCellRef> cellsBySlot;
+        private final List<SheetCellRef> allCells;
+
+        public SheetLedger(int slots) {
+            this.slots = Math.max(1, slots);
+            this.cellsBySlot = new ConcurrentHashMap<>();
+            this.allCells = new ArrayList<>();
+        }
+
+        public void logCell(String cellRef, int sheetApp, String valueHash) {
+            int slot = Math.abs(cellRef.hashCode()) % slots;
+            while (cellsBySlot.containsKey(slot)) slot = (slot + 1) % slots;
+            SheetCellRef ref = new SheetCellRef(cellRef, sheetApp, valueHash);
+            cellsBySlot.put(slot, ref);
+            allCells.add(ref);
+        }
+
