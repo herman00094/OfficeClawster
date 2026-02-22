@@ -412,3 +412,49 @@ public final class OfficeClawster {
         private static final String PREFIX_SLOT = "slot-";
         private int seq;
 
+        public IdGenerator() { this.seq = 0; }
+        public IdGenerator(int start) { this.seq = start; }
+
+        public String nextDocId() { return PREFIX_DOC + Instant.now().toEpochMilli() + "-" + (seq++) + "-" + UUID.randomUUID().toString().substring(0, 6); }
+        public String nextCellRef(String sheet, int row) { return PREFIX_CELL + sheet + row + "-" + (seq++); }
+        public String nextSlotId() { return PREFIX_SLOT + (seq++) + "-" + Integer.toHexString((int) (System.nanoTime() & 0xFFFF)); }
+    }
+
+    // -------------------------------------------------------------------------
+    // CLI MAIN
+    // -------------------------------------------------------------------------
+
+    public static void main(String[] args) throws IOException {
+        OfficeClawster claw = new OfficeClawster(4096);
+        IdGenerator idGen = new IdGenerator(100);
+
+        if (args.length > 0) {
+            switch (args[0].toLowerCase()) {
+                case "export":
+                    Path out = args.length > 1 ? Paths.get(args[1]) : Paths.get("office_clawster_export.json");
+                    ExportUtils.exportToFile(claw, out);
+                    System.out.println("Exported to " + out.toAbsolutePath());
+                    return;
+                case "stats":
+                    System.out.println("Docs: " + claw.docQueue.docCount() + ", Cells: " + claw.sheetLedger.listCells().size() + ", Inbox: " + claw.inboxRegistry.listSlots().size());
+                    System.out.println("Epoch: " + claw.docQueue.getCurrentQueueEpoch());
+                    return;
+                case "enqueue":
+                    if (args.length >= 2) {
+                        String docId = args[1];
+                        OfficeTaskType type = args.length >= 3 ? OfficeTaskType.fromCode(Integer.parseInt(args[2])) : OfficeTaskType.WORD_DOC;
+                        claw.docQueue.enqueue(docId, "cli", type, ExportUtils.hashContent(docId));
+                        System.out.println("Enqueued " + docId);
+                    }
+                    return;
+                default:
+                    break;
+            }
+        }
+
+        String d1 = idGen.nextDocId();
+        String d2 = idGen.nextDocId();
+        claw.docQueue.enqueue(d1, "system", OfficeTaskType.WORD_DOC, ExportUtils.hashContent("sample1"));
+        claw.docQueue.enqueue(d2, "system", OfficeTaskType.EXCEL_SHEET, ExportUtils.hashContent("sample2"));
+        claw.sheetLedger.logCell("A1", 0, ExportUtils.hashContent("value"));
+        claw.sheetLedger.logCell("B2", 0, ExportUtils.hashContent("value2"));
