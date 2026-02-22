@@ -504,3 +504,49 @@ public final class OfficeClawster {
             return true;
         }
 
+        private boolean cmdProcess(String[] parts) {
+            claw.getEngine().processNextDoc();
+            System.out.println("Processed next doc");
+            return true;
+        }
+
+        private boolean cmdLogCell(String[] parts) {
+            if (parts.length < 2) { System.out.println("Usage: logcell <cellRef> [sheetApp]"); return true; }
+            int app = parts.length >= 3 ? Integer.parseInt(parts[2]) : 0;
+            try {
+                claw.sheetLedger.logCell(parts[1], app, ExportUtils.hashContent(parts[1]));
+                System.out.println("Logged " + parts[1]);
+            } catch (Exception e) { System.out.println("Error: " + e.getMessage()); }
+            return true;
+        }
+
+        private boolean cmdReserve(String[] parts) {
+            if (parts.length < 2) { System.out.println("Usage: reserve <slotId> [inboxType]"); return true; }
+            int type = parts.length >= 3 ? Integer.parseInt(parts[2]) : 0;
+            try {
+                claw.inboxRegistry.reserve(parts[1], "user", type);
+                System.out.println("Reserved " + parts[1]);
+            } catch (Exception e) { System.out.println("Error: " + e.getMessage()); }
+            return true;
+        }
+
+        private boolean cmdEpoch(String[] parts) {
+            claw.docQueue.bumpEpoch();
+            System.out.println("Epoch: " + claw.docQueue.getCurrentQueueEpoch());
+            return true;
+        }
+
+        private boolean cmdList(String[] parts) {
+            if (parts.length < 2) { System.out.println("Usage: list docs|cells|slots"); return true; }
+            switch (parts[1].toLowerCase()) {
+                case "docs": claw.docQueue.listDocIds().forEach(id -> System.out.println("  " + id)); break;
+                case "cells": claw.sheetLedger.listCells().forEach(c -> System.out.println("  " + c.getCellRef())); break;
+                case "slots": claw.inboxRegistry.listSlots().forEach(s -> System.out.println("  " + s.getSlotId())); break;
+                default: System.out.println("Unknown list type"); break;
+            }
+            return true;
+        }
+
+        private boolean cmdExport(String[] parts) {
+            try {
+                Path p = parts.length >= 2 ? Paths.get(parts[1]) : Paths.get("claw_export.json");
