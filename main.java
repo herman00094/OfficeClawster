@@ -780,3 +780,49 @@ public final class OfficeClawster {
     }
 
     // -------------------------------------------------------------------------
+    // WORD DOC HANDLER (STUB)
+    // -------------------------------------------------------------------------
+
+    public static final class WordDocHandler {
+        public static final String HANDLER_NAME = "WordDocHandler";
+        private final DocQueue queue;
+        public WordDocHandler(DocQueue queue) { this.queue = queue; }
+        public List<QueuedDocument> getWordDocs() {
+            return queue.listDocs().stream().filter(d -> d.getDocType() == OfficeTaskType.WORD_DOC).collect(Collectors.toList());
+        }
+        public Optional<QueuedDocument> findById(String docId) { return queue.getDoc(docId); }
+        public int count() { return getWordDocs().size(); }
+        public void enqueueWordDoc(String docId, String by, String payloadHash) {
+            queue.enqueue(docId, by, OfficeTaskType.WORD_DOC, payloadHash);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // EXCEL CELL HANDLER (STUB)
+    // -------------------------------------------------------------------------
+
+    public static final class ExcelCellHandler {
+        public static final String HANDLER_NAME = "ExcelCellHandler";
+        private final SheetLedger ledger;
+        public ExcelCellHandler(SheetLedger ledger) { this.ledger = ledger; }
+        public List<SheetCellRef> getExcelCells() { return ledger.listBySheetApp(0); }
+        public void logCell(String ref, String valueHash) { ledger.logCell(ref, 0, valueHash); }
+        public int count() { return ledger.listCells().size(); }
+        public Optional<SheetCellRef> findByRef(String cellRef) {
+            return ledger.listCells().stream().filter(c -> cellRef.equals(c.getCellRef())).findFirst();
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // OUTLOOK INBOX HANDLER (STUB)
+    // -------------------------------------------------------------------------
+
+    public static final class OutlookInboxHandler {
+        public static final String HANDLER_NAME = "OutlookInboxHandler";
+        private final InboxRegistry registry;
+        public OutlookInboxHandler(InboxRegistry registry) { this.registry = registry; }
+        public List<InboxSlotItem> getAllSlots() { return registry.listSlots(); }
+        public Optional<InboxSlotItem> findBySlotId(String slotId) { return registry.getBySlotId(slotId); }
+        public int count() { return registry.listSlots().size(); }
+        public InboxSlotItem reserveSlot(String slotId, String by) { return registry.reserve(slotId, by, 0); }
+    }
