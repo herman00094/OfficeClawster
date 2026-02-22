@@ -274,3 +274,49 @@ public final class OfficeClawster {
         public List<InboxSlotItem> listSlots() { return new ArrayList<>(allSlots); }
     }
 
+    // -------------------------------------------------------------------------
+    // CLAW BOT ENGINE
+    // -------------------------------------------------------------------------
+
+    public static final class ClawBotEngine {
+        private final DocQueue docQueue;
+        private final SheetLedger sheetLedger;
+        private final InboxRegistry inboxRegistry;
+
+        public ClawBotEngine(DocQueue docQueue, SheetLedger sheetLedger, InboxRegistry inboxRegistry) {
+            this.docQueue = docQueue;
+            this.sheetLedger = sheetLedger;
+            this.inboxRegistry = inboxRegistry;
+        }
+
+        public List<QueuedDocument> getUnprocessedDocs() {
+            return docQueue.listDocs().stream().filter(d -> !d.isProcessed()).collect(Collectors.toList());
+        }
+
+        public List<QueuedDocument> getDocsByType(OfficeTaskType type) {
+            return docQueue.listDocs().stream().filter(d -> d.getDocType() == type).collect(Collectors.toList());
+        }
+
+        public List<QueuedDocument> getDocsInEpoch(long epoch) {
+            return docQueue.listDocs().stream().filter(d -> d.getQueueEpoch() == epoch).collect(Collectors.toList());
+        }
+
+        public void processNextDoc() {
+            Optional<QueuedDocument> next = docQueue.listDocs().stream().filter(d -> !d.isProcessed()).findFirst();
+            next.ifPresent(d -> docQueue.markProcessed(d.getDocId()));
+        }
+
+        public String hashPayload(String payload) {
+            return OfficeClawster.ExportUtils.hashContent(payload);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // EXPORT / SERIALIZE
+    // -------------------------------------------------------------------------
+
+    public static final class ExportUtils {
+        public static String toJson(OfficeClawster claw) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("{\"version\":\"").append(CLAW_VERSION).append("\",\"epoch\":").append(claw.docQueue.getCurrentQueueEpoch()).append(",");
+            sb.append("\"docs\":[");
