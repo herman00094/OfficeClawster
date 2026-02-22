@@ -458,3 +458,49 @@ public final class OfficeClawster {
         claw.docQueue.enqueue(d2, "system", OfficeTaskType.EXCEL_SHEET, ExportUtils.hashContent("sample2"));
         claw.sheetLedger.logCell("A1", 0, ExportUtils.hashContent("value"));
         claw.sheetLedger.logCell("B2", 0, ExportUtils.hashContent("value2"));
+        claw.inboxRegistry.reserve(idGen.nextSlotId(), "system", 0);
+
+        System.out.println("OfficeClawster ready. Docs: " + claw.docQueue.docCount());
+        System.out.println(ExportUtils.toJson(claw));
+    }
+
+    // -------------------------------------------------------------------------
+    // COMMAND PARSER (CLI)
+    // -------------------------------------------------------------------------
+
+    public static final class CommandParser {
+        private final OfficeClawster claw;
+        private final IdGenerator idGen;
+
+        public CommandParser(OfficeClawster claw) {
+            this.claw = claw;
+            this.idGen = new IdGenerator(500);
+        }
+
+        public boolean parse(String line) {
+            if (line == null || line.trim().isEmpty()) return true;
+            String[] parts = line.trim().split("\\s+");
+            if (parts.length == 0) return true;
+            switch (parts[0].toLowerCase()) {
+                case "enqueue": return cmdEnqueue(parts);
+                case "process": return cmdProcess(parts);
+                case "logcell": return cmdLogCell(parts);
+                case "reserve": return cmdReserve(parts);
+                case "epoch": return cmdEpoch(parts);
+                case "list": return cmdList(parts);
+                case "export": return cmdExport(parts);
+                case "quit": case "exit": return false;
+                default: System.out.println("Unknown: " + parts[0]); return true;
+            }
+        }
+
+        private boolean cmdEnqueue(String[] parts) {
+            if (parts.length < 2) { System.out.println("Usage: enqueue <docId> [type]"); return true; }
+            OfficeTaskType type = parts.length >= 3 ? OfficeTaskType.fromCode(Integer.parseInt(parts[2])) : OfficeTaskType.GENERIC_DOC;
+            try {
+                claw.docQueue.enqueue(parts[1], "user", type, ExportUtils.hashContent(parts[1]));
+                System.out.println("Enqueued " + parts[1]);
+            } catch (Exception e) { System.out.println("Error: " + e.getMessage()); }
+            return true;
+        }
+
