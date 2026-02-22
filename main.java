@@ -642,3 +642,49 @@ public final class OfficeClawster {
         }
         public static List<QueuedDocument> unprocessedOnly(Collection<QueuedDocument> docs) {
             return docs.stream().filter(d -> !d.isProcessed()).collect(Collectors.toList());
+        }
+        public static List<QueuedDocument> byEpoch(Collection<QueuedDocument> docs, long epoch) {
+            return docs.stream().filter(d -> d.getQueueEpoch() == epoch).collect(Collectors.toList());
+        }
+        public static List<QueuedDocument> byEnqueuedBy(Collection<QueuedDocument> docs, String who) {
+            return docs.stream().filter(d -> who.equals(d.getEnqueuedBy())).collect(Collectors.toList());
+        }
+    }
+
+    public static final class CellFilters {
+        public static List<SheetCellRef> bySheetApp(Collection<SheetCellRef> cells, int app) {
+            return cells.stream().filter(c -> c.getSheetApp() == app).collect(Collectors.toList());
+        }
+        public static List<SheetCellRef> byCellRefPrefix(Collection<SheetCellRef> cells, String prefix) {
+            return cells.stream().filter(c -> c.getCellRef().startsWith(prefix)).collect(Collectors.toList());
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // PAGINATION HELPERS
+    // -------------------------------------------------------------------------
+
+    public static final class Pagination {
+        public static List<String> docIdPage(DocQueue queue, int offset, int limit) {
+            List<String> all = queue.listDocIds();
+            int from = Math.min(offset, all.size());
+            int to = Math.min(from + limit, all.size());
+            return new ArrayList<>(all.subList(from, to));
+        }
+        public static List<SheetCellRef> cellPage(SheetLedger ledger, int offset, int limit) {
+            List<SheetCellRef> all = ledger.listCells();
+            int from = Math.min(offset, all.size());
+            int to = Math.min(from + limit, all.size());
+            return new ArrayList<>(all.subList(from, to));
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // CONFIG HOLDER
+    // -------------------------------------------------------------------------
+
+    public static final class ClawConfig {
+        private final int queueCap;
+        private final int cellSlots;
+        private final int inboxSlots;
+        private final String domainHex;
