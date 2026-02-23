@@ -872,3 +872,49 @@ public final class OfficeClawster {
         }
         public static boolean isValidInboxType(int type) {
             return type >= 0 && type < INBOX_SLOTS;
+        }
+        public static String sanitizeDocId(String id) {
+            if (id == null) return "";
+            return id.trim().replaceAll("[^a-zA-Z0-9_-]", "_").substring(0, Math.min(128, id.length()));
+        }
+        public static String sanitizeCellRef(String ref) {
+            if (ref == null) return "";
+            return ref.trim().toUpperCase();
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // EXTENDED BATCH OPS
+    // -------------------------------------------------------------------------
+
+    public static final class BatchOpsExtended {
+        public static int enqueueFromList(OfficeClawster claw, List<String> docIds, String by, OfficeTaskType type) {
+            return BatchOps.enqueueBatch(claw, docIds, by, type, null);
+        }
+        public static int enqueueWordBatch(OfficeClawster claw, List<String> docIds, String by) {
+            return BatchOps.enqueueBatch(claw, docIds, by, OfficeTaskType.WORD_DOC, null);
+        }
+        public static int enqueueExcelBatch(OfficeClawster claw, List<String> docIds, String by) {
+            return BatchOps.enqueueBatch(claw, docIds, by, OfficeTaskType.EXCEL_SHEET, null);
+        }
+        public static int enqueueOutlookBatch(OfficeClawster claw, List<String> docIds, String by) {
+            return BatchOps.enqueueBatch(claw, docIds, by, OfficeTaskType.OUTLOOK_MAIL, null);
+        }
+        public static int reserveSlotsBatch(OfficeClawster claw, List<String> slotIds, String by, int inboxType) {
+            int n = 0;
+            for (String id : slotIds) {
+                if (!ValidationUtils.isValidSlotId(id)) continue;
+                try {
+                    claw.inboxRegistry.reserve(id, by, inboxType);
+                    n++;
+                } catch (Exception ignored) { }
+            }
+            return n;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // EXPORT EXTENDED
+    // -------------------------------------------------------------------------
+
+    public static final class ExportUtilsExtended {
