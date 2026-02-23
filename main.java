@@ -1010,3 +1010,49 @@ public final class OfficeClawster {
     public boolean hasProcessed(String docId) { return docQueue.getDoc(docId).map(QueuedDocument::isProcessed).orElse(false); }
 
     // -------------------------------------------------------------------------
+    // POWERPOINT / ONENOTE / OTHERS STUBS
+    // -------------------------------------------------------------------------
+
+    public static final class PowerPointHandler {
+        private final DocQueue queue;
+        public PowerPointHandler(DocQueue queue) { this.queue = queue; }
+        public List<QueuedDocument> getSlides() {
+            return queue.listDocs().stream().filter(d -> d.getDocType() == OfficeTaskType.POWERPOINT_SLIDE).collect(Collectors.toList());
+        }
+        public int count() { return getSlides().size(); }
+    }
+
+    public static final class OneNoteHandler {
+        private final DocQueue queue;
+        public OneNoteHandler(DocQueue queue) { this.queue = queue; }
+        public List<QueuedDocument> getPages() {
+            return queue.listDocs().stream().filter(d -> d.getDocType() == OfficeTaskType.ONENOTE_PAGE).collect(Collectors.toList());
+        }
+        public int count() { return getPages().size(); }
+    }
+
+    public static final class TeamsHandler {
+        private final DocQueue queue;
+        public TeamsHandler(DocQueue queue) { this.queue = queue; }
+        public List<QueuedDocument> getMessages() {
+            return queue.listDocs().stream().filter(d -> d.getDocType() == OfficeTaskType.TEAMS_MSG).collect(Collectors.toList());
+        }
+        public int count() { return getMessages().size(); }
+    }
+
+    public static final class CalendarHandler {
+        private final DocQueue queue;
+        public CalendarHandler(DocQueue queue) { this.queue = queue; }
+        public List<QueuedDocument> getEvents() {
+            return queue.listDocs().stream().filter(d -> d.getDocType() == OfficeTaskType.CALENDAR_EVENT).collect(Collectors.toList());
+        }
+        public int count() { return getEvents().size(); }
+    }
+
+    public static final class ContactHandler {
+        private final DocQueue queue;
+        public ContactHandler(DocQueue queue) { this.queue = queue; }
+        public List<QueuedDocument> getContacts() {
+            return queue.listDocs().stream().filter(d -> d.getDocType() == OfficeTaskType.CONTACT_ENTRY).collect(Collectors.toList());
+        }
+        public int count() { return getContacts().size(); }
