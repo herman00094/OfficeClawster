@@ -1102,3 +1102,49 @@ public final class OfficeClawster {
         CommandParser parser = claw.getCommandParser();
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
         System.out.println("OfficeClawster CLI. Commands: enqueue, process, logcell, reserve, epoch, list, export, quit");
+        while (true) {
+            System.out.print("claw> ");
+            String line = reader.readLine();
+            if (line == null) break;
+            if (!parser.parse(line)) break;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // STATIC UTILITIES
+    // -------------------------------------------------------------------------
+
+    public static String docIdFromTimestamp() {
+        return "doc-ts-" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString().substring(0, 8);
+    }
+    public static String cellRefFromRowCol(int row, int col) {
+        StringBuilder colPart = new StringBuilder();
+        while (col >= 0) { colPart.insert(0, (char) ('A' + (col % 26))); col = col / 26 - 1; }
+        return colPart.toString() + (row + 1);
+    }
+    public static OfficeTaskType taskTypeFromString(String s) {
+        if (s == null) return OfficeTaskType.UNKNOWN;
+        try { return OfficeTaskType.valueOf(s.toUpperCase().replace("-", "_")); } catch (Exception e) { return OfficeTaskType.UNKNOWN; }
+    }
+    public static boolean isWordType(OfficeTaskType t) { return t == OfficeTaskType.WORD_DOC; }
+    public static boolean isExcelType(OfficeTaskType t) { return t == OfficeTaskType.EXCEL_SHEET; }
+    public static boolean isOutlookType(OfficeTaskType t) { return t == OfficeTaskType.OUTLOOK_MAIL; }
+    public static boolean isPowerPointType(OfficeTaskType t) { return t == OfficeTaskType.POWERPOINT_SLIDE; }
+    public static boolean isOneNoteType(OfficeTaskType t) { return t == OfficeTaskType.ONENOTE_PAGE; }
+    public static boolean isTeamsType(OfficeTaskType t) { return t == OfficeTaskType.TEAMS_MSG; }
+    public static boolean isCalendarType(OfficeTaskType t) { return t == OfficeTaskType.CALENDAR_EVENT; }
+    public static boolean isContactType(OfficeTaskType t) { return t == OfficeTaskType.CONTACT_ENTRY; }
+    public static boolean isTaskType(OfficeTaskType t) { return t == OfficeTaskType.TASK_ITEM; }
+    public static String taskTypeDisplayName(OfficeTaskType t) {
+        switch (t) {
+            case WORD_DOC: return "Word Document";
+            case EXCEL_SHEET: return "Excel Sheet";
+            case OUTLOOK_MAIL: return "Outlook Mail";
+            case POWERPOINT_SLIDE: return "PowerPoint Slide";
+            case ONENOTE_PAGE: return "OneNote Page";
+            case ACCESS_DB: return "Access Database";
+            case PUBLISHER_PUB: return "Publisher Publication";
+            case VISIO_DIAGRAM: return "Visio Diagram";
+            case PROJECT_PLAN: return "Project Plan";
+            case TEAMS_MSG: return "Teams Message";
+            case SHAREPOINT_ITEM: return "SharePoint Item";
