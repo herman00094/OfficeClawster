@@ -1056,3 +1056,49 @@ public final class OfficeClawster {
             return queue.listDocs().stream().filter(d -> d.getDocType() == OfficeTaskType.CONTACT_ENTRY).collect(Collectors.toList());
         }
         public int count() { return getContacts().size(); }
+    }
+
+    public static final class TaskItemHandler {
+        private final DocQueue queue;
+        public TaskItemHandler(DocQueue queue) { this.queue = queue; }
+        public List<QueuedDocument> getTasks() {
+            return queue.listDocs().stream().filter(d -> d.getDocType() == OfficeTaskType.TASK_ITEM).collect(Collectors.toList());
+        }
+        public int count() { return getTasks().size(); }
+    }
+
+    // -------------------------------------------------------------------------
+    // AGGREGATE HANDLER REGISTRY
+    // -------------------------------------------------------------------------
+
+    public static final class HandlerRegistry {
+        private final OfficeClawster claw;
+        private final Map<OfficeTaskType, Object> handlers;
+
+        public HandlerRegistry(OfficeClawster claw) {
+            this.claw = claw;
+            this.handlers = new EnumMap<>(OfficeTaskType.class);
+            this.handlers.put(OfficeTaskType.WORD_DOC, new WordDocHandler(claw.docQueue));
+            this.handlers.put(OfficeTaskType.EXCEL_SHEET, new ExcelCellHandler(claw.sheetLedger));
+            this.handlers.put(OfficeTaskType.POWERPOINT_SLIDE, new PowerPointHandler(claw.docQueue));
+            this.handlers.put(OfficeTaskType.ONENOTE_PAGE, new OneNoteHandler(claw.docQueue));
+            this.handlers.put(OfficeTaskType.TEAMS_MSG, new TeamsHandler(claw.docQueue));
+            this.handlers.put(OfficeTaskType.CALENDAR_EVENT, new CalendarHandler(claw.docQueue));
+            this.handlers.put(OfficeTaskType.CONTACT_ENTRY, new ContactHandler(claw.docQueue));
+            this.handlers.put(OfficeTaskType.TASK_ITEM, new TaskItemHandler(claw.docQueue));
+        }
+
+        public Object getHandler(OfficeTaskType type) { return handlers.get(type); }
+        public WordDocHandler getWordHandler() { return (WordDocHandler) handlers.get(OfficeTaskType.WORD_DOC); }
+        public ExcelCellHandler getExcelHandler() { return (ExcelCellHandler) handlers.get(OfficeTaskType.EXCEL_SHEET); }
+        public int handlerCount() { return handlers.size(); }
+    }
+
+    // -------------------------------------------------------------------------
+    // CLI RUNNER (INTERACTIVE LOOP)
+    // -------------------------------------------------------------------------
+
+    public static void runInteractive(OfficeClawster claw) throws IOException {
+        CommandParser parser = claw.getCommandParser();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
+        System.out.println("OfficeClawster CLI. Commands: enqueue, process, logcell, reserve, epoch, list, export, quit");
