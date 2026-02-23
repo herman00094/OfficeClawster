@@ -826,3 +826,49 @@ public final class OfficeClawster {
         public int count() { return registry.listSlots().size(); }
         public InboxSlotItem reserveSlot(String slotId, String by) { return registry.reserve(slotId, by, 0); }
     }
+
+    // -------------------------------------------------------------------------
+    // OFFICE TASK RUNNER (SIMULATED EXECUTION)
+    // -------------------------------------------------------------------------
+
+    public static final class OfficeTaskRunner {
+        private final OfficeClawster claw;
+        private int runCount;
+        private long lastRunMs;
+
+        public OfficeTaskRunner(OfficeClawster claw) {
+            this.claw = claw;
+            this.runCount = 0;
+            this.lastRunMs = 0;
+        }
+        public int getRunCount() { return runCount; }
+        public long getLastRunMs() { return lastRunMs; }
+        public void runNext() {
+            List<QueuedDocument> unprocessed = claw.getEngine().getUnprocessedDocs();
+            if (!unprocessed.isEmpty()) {
+                claw.docQueue.markProcessed(unprocessed.get(0).getDocId());
+                runCount++;
+                lastRunMs = System.currentTimeMillis();
+            }
+        }
+        public void runAll() {
+            while (!claw.getEngine().getUnprocessedDocs().isEmpty()) runNext();
+        }
+        public void runUpTo(int max) {
+            for (int i = 0; i < max && !claw.getEngine().getUnprocessedDocs().isEmpty(); i++) runNext();
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // EXTENDED VALIDATION
+    // -------------------------------------------------------------------------
+
+    public static final class ValidationUtilsExtended {
+        public static boolean isValidDocType(int code) {
+            return code >= 0 && code <= MAX_DOC_TYPE;
+        }
+        public static boolean isValidSheetApp(int app) {
+            return app >= 0 && app < CELL_SLOTS;
+        }
+        public static boolean isValidInboxType(int type) {
+            return type >= 0 && type < INBOX_SLOTS;
