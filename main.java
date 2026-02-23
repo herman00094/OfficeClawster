@@ -1194,3 +1194,39 @@ public final class OfficeClawster {
         public static boolean isHealthy(OfficeClawster claw) {
             return claw.docQueue.getCapacity() > 0
                     && claw.docQueue.docCount() <= claw.docQueue.getCapacity()
+                    && claw.sheetLedger.listCells().size() <= CELL_SLOTS * 2
+                    && claw.inboxRegistry.listSlots().size() <= INBOX_SLOTS;
+        }
+        public static List<String> getIssues(OfficeClawster claw) {
+            List<String> issues = new ArrayList<>();
+            if (claw.docQueue.docCount() > claw.docQueue.getCapacity()) issues.add("Doc queue over capacity");
+            if (claw.sheetLedger.listCells().size() > CELL_SLOTS * 2) issues.add("Cell count high");
+            if (claw.inboxRegistry.listSlots().size() > INBOX_SLOTS) issues.add("Inbox slots over cap");
+            return issues;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // EPOCH BOUNDS
+    // -------------------------------------------------------------------------
+
+    public long getEpochStartBlock(long epoch) { return epoch * 96L; }
+    public long getEpochEndBlock(long epoch) { return (epoch + 1) * 96L - 1; }
+    public boolean isEpochAdvanced(long epoch) {
+        return epoch < docQueue.getCurrentQueueEpoch();
+    }
+
+    // -------------------------------------------------------------------------
+    // DOC TYPE COUNTS
+    // -------------------------------------------------------------------------
+
+    public int countByType(OfficeTaskType type) {
+        return (int) docQueue.listDocs().stream().filter(d -> d.getDocType() == type).count();
+    }
+    public Map<OfficeTaskType, Integer> countAllTypes() {
+        Map<OfficeTaskType, Integer> m = new EnumMap<>(OfficeTaskType.class);
+        for (OfficeTaskType t : OfficeTaskType.values()) m.put(t, 0);
+        docQueue.listDocs().forEach(d -> m.put(d.getDocType(), m.get(d.getDocType()) + 1));
+        return m;
+    }
+}
