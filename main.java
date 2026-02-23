@@ -918,3 +918,49 @@ public final class OfficeClawster {
     // -------------------------------------------------------------------------
 
     public static final class ExportUtilsExtended {
+        public static void exportDocsCsv(OfficeClawster claw, Path path) throws IOException {
+            Files.write(path, ExportFormats.toCsvDocs(claw).getBytes(StandardCharsets.UTF_8));
+        }
+        public static void exportCellsCsv(OfficeClawster claw, Path path) throws IOException {
+            Files.write(path, ExportFormats.toCsvCells(claw).getBytes(StandardCharsets.UTF_8));
+        }
+        public static String toJsonFull(OfficeClawster claw) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("{\"version\":\"").append(CLAW_VERSION).append("\",\"epoch\":").append(claw.docQueue.getCurrentQueueEpoch()).append(",");
+            sb.append("\"docs\":[");
+            List<String> docIds = claw.docQueue.listDocIds();
+            for (int i = 0; i < docIds.size(); i++) {
+                QueuedDocument d = claw.docQueue.getDoc(docIds.get(i)).orElse(null);
+                if (d == null) continue;
+                if (i > 0) sb.append(",");
+                sb.append("{\"id\":\"").append(ExportUtils.escape(d.getDocId())).append("\",\"by\":\"").append(ExportUtils.escape(d.getEnqueuedBy())).append("\",\"type\":\"").append(d.getDocType().name()).append("\",\"epoch\":").append(d.getQueueEpoch()).append(",\"processed\":").append(d.isProcessed()).append("}");
+            }
+            sb.append("],\"cells\":[");
+            List<SheetCellRef> cells = claw.sheetLedger.listCells();
+            for (int i = 0; i < cells.size(); i++) {
+                SheetCellRef c = cells.get(i);
+                if (i > 0) sb.append(",");
+                sb.append("{\"ref\":\"").append(ExportUtils.escape(c.getCellRef())).append("\",\"app\":").append(c.getSheetApp()).append("}");
+            }
+            sb.append("],\"inbox\":[");
+            List<InboxSlotItem> slots = claw.inboxRegistry.listSlots();
+            for (int i = 0; i < slots.size(); i++) {
+                InboxSlotItem s = slots.get(i);
+                if (i > 0) sb.append(",");
+                sb.append("{\"slotId\":\"").append(ExportUtils.escape(s.getSlotId())).append("\",\"by\":\"").append(ExportUtils.escape(s.getReservedBy())).append("\"}");
+            }
+            sb.append("]}");
+            return sb.toString();
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // REPORT EXTENDED
+    // -------------------------------------------------------------------------
+
+    public static final class ReportBuilderExtended {
+        private final OfficeClawster claw;
+        public ReportBuilderExtended(OfficeClawster claw) { this.claw = claw; }
+        public String fullReport() {
+            ReportBuilder rb = new ReportBuilder(claw);
+            StatsAggregator sa = new StatsAggregator(claw);
