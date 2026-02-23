@@ -964,3 +964,49 @@ public final class OfficeClawster {
         public String fullReport() {
             ReportBuilder rb = new ReportBuilder(claw);
             StatsAggregator sa = new StatsAggregator(claw);
+            StringBuilder sb = new StringBuilder();
+            sb.append(rb.buildSummary()).append("\n").append(rb.buildDocTypeBreakdown());
+            sb.append("\nProcessed: ").append(sa.processedDocs()).append(" Pending: ").append(sa.pendingDocs());
+            return sb.toString();
+        }
+        public String epochReport(long epoch) {
+            int count = (int) claw.docQueue.listDocs().stream().filter(d -> d.getQueueEpoch() == epoch).count();
+            return "Epoch " + epoch + ": " + count + " docs";
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // CONSTANTS EXPOSURE
+    // -------------------------------------------------------------------------
+
+    public static int getMaxDocsPerEpoch() { return MAX_DOCS_PER_EPOCH; }
+    public static int getCellSlotsConstant() { return CELL_SLOTS; }
+    public static int getInboxSlotsConstant() { return INBOX_SLOTS; }
+    public static String getClawVersion() { return CLAW_VERSION; }
+    public static OfficeTaskType[] getAllTaskTypes() { return OfficeTaskType.values(); }
+
+    // -------------------------------------------------------------------------
+    // CONVENIENCE FACTORY
+    // -------------------------------------------------------------------------
+
+    public WordDocHandler createWordDocHandler() { return new WordDocHandler(docQueue); }
+    public ExcelCellHandler createExcelCellHandler() { return new ExcelCellHandler(sheetLedger); }
+    public OutlookInboxHandler createOutlookInboxHandler() { return new OutlookInboxHandler(inboxRegistry); }
+    public OfficeTaskRunner createOfficeTaskRunner() { return new OfficeTaskRunner(this); }
+    public ReportBuilderExtended createReportBuilderExtended() { return new ReportBuilderExtended(this); }
+
+    // -------------------------------------------------------------------------
+    // QUERY HELPERS
+    // -------------------------------------------------------------------------
+
+    public List<QueuedDocument> getDocsByType(OfficeTaskType type) { return engine.getDocsByType(type); }
+    public List<QueuedDocument> getUnprocessedDocs() { return engine.getUnprocessedDocs(); }
+    public Optional<QueuedDocument> getDoc(String docId) { return docQueue.getDoc(docId); }
+    public Optional<SheetCellRef> getCellByRef(String cellRef) {
+        return sheetLedger.listCells().stream().filter(c -> cellRef.equals(c.getCellRef())).findFirst();
+    }
+    public Optional<InboxSlotItem> getInboxSlot(String slotId) { return inboxRegistry.getBySlotId(slotId); }
+    public boolean hasDoc(String docId) { return docQueue.getDoc(docId).isPresent(); }
+    public boolean hasProcessed(String docId) { return docQueue.getDoc(docId).map(QueuedDocument::isProcessed).orElse(false); }
+
+    // -------------------------------------------------------------------------
