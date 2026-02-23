@@ -1148,3 +1148,49 @@ public final class OfficeClawster {
             case PROJECT_PLAN: return "Project Plan";
             case TEAMS_MSG: return "Teams Message";
             case SHAREPOINT_ITEM: return "SharePoint Item";
+            case GENERIC_DOC: return "Generic Document";
+            case CALENDAR_EVENT: return "Calendar Event";
+            case CONTACT_ENTRY: return "Contact Entry";
+            case TASK_ITEM: return "Task Item";
+            default: return "Unknown";
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // SNAPSHOT / MEMENTO
+    // -------------------------------------------------------------------------
+
+    public static final class ClawSnapshot {
+        private final long epoch;
+        private final int docCount;
+        private final int cellCount;
+        private final int slotCount;
+        private final long takenAtMs;
+
+        public ClawSnapshot(OfficeClawster claw) {
+            this.epoch = claw.docQueue.getCurrentQueueEpoch();
+            this.docCount = claw.docQueue.docCount();
+            this.cellCount = claw.sheetLedger.listCells().size();
+            this.slotCount = claw.inboxRegistry.listSlots().size();
+            this.takenAtMs = System.currentTimeMillis();
+        }
+        public long getEpoch() { return epoch; }
+        public int getDocCount() { return docCount; }
+        public int getCellCount() { return cellCount; }
+        public int getSlotCount() { return slotCount; }
+        public long getTakenAtMs() { return takenAtMs; }
+        public String summary() {
+            return "Snapshot(epoch=" + epoch + ", docs=" + docCount + ", cells=" + cellCount + ", slots=" + slotCount + ")";
+        }
+    }
+
+    public ClawSnapshot takeSnapshot() { return new ClawSnapshot(this); }
+
+    // -------------------------------------------------------------------------
+    // HEALTH CHECK
+    // -------------------------------------------------------------------------
+
+    public static final class HealthCheck {
+        public static boolean isHealthy(OfficeClawster claw) {
+            return claw.docQueue.getCapacity() > 0
+                    && claw.docQueue.docCount() <= claw.docQueue.getCapacity()
